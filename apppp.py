@@ -186,3 +186,13 @@ with tab3:
     st.subheader("Anomaly Label Counts")
     st.write(f"Count of -1 (Outliers): {count_anomalies.get(-1, 0)}")
     st.write(f"Count of 1 (Normal): {count_anomalies.get(1, 0)}")
+
+    # Add download button for the dataset with anomaly labels
+    st.subheader("Download Data with Anomaly Labels")
+    csv = data.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name='anomaly_detected_data.csv',
+        mime='text/csv'
+    )
