@@ -18,7 +18,7 @@ from sklearn.cluster import DBSCAN
 st.title("Anomaly Detection")
 
 # Create tabs
-tab2, tab3, tab4 = st.tabs(["Exploratory Data Analysis", "Modelling", "Scoring"])
+tab2, tab3 = st.tabs(["Exploratory Data Analysis", "Modelling"])
 
 # Load the data
 file_path = 'data3.csv'
@@ -37,12 +37,10 @@ X_preprocessed = preprocessor.fit_transform(X)
 
 # Modify the dataset (e.g., shuffling the data)
 np.random.seed(42)  # Fix the random seed for reproducibility
-indices = np.arange(X_preprocessed.shape[0])
-np.random.shuffle(indices)
-X_preprocessed = X_preprocessed[indices]
+np.random.shuffle(X_preprocessed)
 
 # Separate the data into training and testing sets
-X_train, X_test = train_test_split(X_preprocessed, test_size=0.3, random_state=42)
+X_train, X_test, _, _ = train_test_split(X_preprocessed, X_preprocessed, test_size=0.3, random_state=42)
 
 # Define and fit Isolation Forest
 iforest = IsolationForest(n_estimators=50, contamination='auto', random_state=42)
@@ -69,8 +67,14 @@ predictions_lof = lof.fit_predict(X_test)
 
 # Apply One-Class SVM
 svm = OneClassSVM(kernel='rbf', nu=0.05)
-svm.fit(X_train)
-predictions_svm = svm.predict(X_test)
+predictions_svm = svm.fit_predict(X_test)
+
+# Calculate accuracy for DBSCAN, HDBSCAN, KMeans, LOF, and One-Class SVM
+accuracy_dbscan = accuracy_score(outlier_preds, predictions_dbscan)
+accuracy_hdbscan = accuracy_score(outlier_preds, predictions_hdbscan)
+accuracy_kmeans = accuracy_score(outlier_preds, predictions_kmeans)
+accuracy_lof = accuracy_score(outlier_preds, predictions_lof)
+accuracy_svm = accuracy_score(outlier_preds, predictions_svm)
 
 # Introduce perturbation to reduce the accuracy of the Isolation Forest
 perturbation = np.random.choice([1, -1], size=outlier_preds.shape, p=[0.1, 0.9])
@@ -78,21 +82,6 @@ outlier_preds_perturbed = np.where(perturbation == 1, -outlier_preds, outlier_pr
 
 # Calculate accuracy for Isolation Forest with perturbed predictions
 accuracy_iforest = accuracy_score(outlier_preds, outlier_preds_perturbed)
-
-# Placeholder accuracies for other models
-accuracy_dbscan, accuracy_hdbscan, accuracy_kmeans, accuracy_lof, accuracy_svm = 0, 0, 0, 0, 0
-
-# Define a function to compute accuracy (or another metric)
-def compute_accuracy(true_labels, pred_labels):
-    # Placeholder: define how to compute accuracy or another metric
-    return accuracy_score(true_labels, pred_labels)
-
-# Compute accuracies for other models
-accuracy_dbscan = compute_accuracy(outlier_preds, predictions_dbscan)
-accuracy_hdbscan = compute_accuracy(outlier_preds, predictions_hdbscan)
-accuracy_kmeans = compute_accuracy(outlier_preds, predictions_kmeans)
-accuracy_lof = compute_accuracy(outlier_preds, predictions_lof)
-accuracy_svm = compute_accuracy(outlier_preds, predictions_svm)
 
 with tab2:
     st.header("Exploratory Data Analysis")
@@ -149,9 +138,6 @@ with tab3:
     st.subheader(f"Best Model: {best_model_name}")
     st.write(f"Accuracy: {accuracies[best_model_name]}")
 
-with tab4:
-    st.header("Scoring the Input Data Using the Best Model")
-
     # Fit the best model on the entire dataset and score the data
     if best_model_name == "Isolation Forest":
         model = iforest
@@ -189,7 +175,7 @@ with tab4:
     data['Score'] = scores
     data['Anomaly_Label'] = labels
 
-    st.subheader("Data with Scores and Anomaly Labels")
+    st.subheader(f"Scoring the Input Data Using {best_model_name}")
     st.write(data[['Score', 'Anomaly_Label']])
 
     st.subheader("Data with Anomaly Labels")
