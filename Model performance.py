@@ -12,7 +12,7 @@ from hdbscan import HDBSCAN
 from sklearn.cluster import DBSCAN
 
 # Load the data
-data = pd.read_csv('reduced_1.csv')
+data = pd.read_csv('data4.csv')
 
 # Handle missing values with SimpleImputer
 imputer = SimpleImputer(strategy='mean')
