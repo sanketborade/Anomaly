@@ -128,26 +128,18 @@ with tab2:
 with tab3:
     st.header("Model Accuracy")
 
-    # Display results
-    st.write("Accuracy for DBSCAN:", accuracy_dbscan)
-    st.write("Accuracy for HDBSCAN:", accuracy_hdbscan)
-    st.write("Accuracy for KMeans:", accuracy_kmeans)
-    st.write("Accuracy for Local Outlier Factor:", accuracy_lof)
-    st.write("Accuracy for One-Class SVM:", accuracy_svm)
-    st.write("Accuracy for Isolation Forest:", accuracy_iforest)
+    # Display results in a table
+    results = pd.DataFrame({
+        'Model': ['DBSCAN', 'HDBSCAN', 'KMeans', 'Local Outlier Factor', 'One-Class SVM', 'Isolation Forest'],
+        'Accuracy': [accuracy_dbscan, accuracy_hdbscan, accuracy_kmeans, accuracy_lof, accuracy_svm, accuracy_iforest]
+    })
+    st.write(results)
 
-    accuracies = {
-        "Isolation Forest": accuracy_iforest,
-        "DBSCAN": accuracy_dbscan,
-        "HDBSCAN": accuracy_hdbscan,
-        "KMeans": accuracy_kmeans,
-        "Local Outlier Factor": accuracy_lof,
-        "One-Class SVM": accuracy_svm
-    }
+    best_model_name = results.loc[results['Accuracy'].idxmax(), 'Model']
+    best_model_accuracy = results['Accuracy'].max()
 
-    best_model_name = max(accuracies, key=accuracies.get)
     st.subheader(f"Best Model: {best_model_name}")
-    st.write(f"Accuracy: {accuracies[best_model_name]}")
+    st.write(f"Accuracy: {best_model_accuracy}")
 
 with tab4:
     st.header("Scoring the Input Data Using the Best Model")
