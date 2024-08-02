@@ -151,7 +151,9 @@ with tab4:
         scores = model.decision_function(X_preprocessed)
         labels = model.predict(X_preprocessed)
         # Compute permutation importance
-        perm_importance = permutation_importance(model, X_preprocessed, labels, random_state=42)
+        def custom_score(estimator, X):
+            return accuracy_score(labels, estimator.predict(X))
+        perm_importance = permutation_importance(model, X_preprocessed, labels, scoring=custom_score, random_state=42)
         feature_importances = perm_importance.importances_mean
     elif best_model_name == "DBSCAN":
         model = DBSCAN(eps=0.5, min_samples=5)
