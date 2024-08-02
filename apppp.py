@@ -13,6 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
 from hdbscan import HDBSCAN
 from sklearn.cluster import DBSCAN
+from sklearn.inspection import permutation_importance
 
 # Streamlit interface
 st.title("Anomaly Detection")
@@ -149,7 +150,9 @@ with tab4:
         model = iforest
         scores = model.decision_function(X_preprocessed)
         labels = model.predict(X_preprocessed)
-        feature_importances = model.feature_importances_
+        # Compute permutation importance
+        perm_importance = permutation_importance(model, X_preprocessed, labels, random_state=42)
+        feature_importances = perm_importance.importances_mean
     elif best_model_name == "DBSCAN":
         model = DBSCAN(eps=0.5, min_samples=5)
         labels = model.fit_predict(X_preprocessed)
