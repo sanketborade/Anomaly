@@ -130,7 +130,8 @@ try:
                 st.pyplot(fig)
 
             st.subheader("Line Chart")
-            st.line_chart(data)
+            for column in data.select_dtypes(include=[np.number]).columns:
+                st.line_chart(data[[column]])
 
         with tab3:
             st.header("Model Accuracy")
