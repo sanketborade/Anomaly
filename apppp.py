@@ -13,12 +13,13 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
 from hdbscan import HDBSCAN
 from sklearn.cluster import DBSCAN
+from sklearn.inspection import permutation_importance
 
 # Streamlit interface
 st.title("Anomaly Detection")
 
 # Create tabs
-tab2, tab3, tab4 = st.tabs(["Exploratory Data Analysis", "Modelling", "Scoring"])
+tab2, tab3 = st.tabs(["Exploratory Data Analysis", "Modelling"])
 
 # Load the data
 file_path = 'data3.csv'
@@ -141,65 +142,52 @@ with tab3:
     st.subheader(f"Best Model: {best_model_name}")
     st.write(f"Accuracy: {best_model_accuracy}")
 
-with tab4:
-    st.header("Scoring the Input Data Using the Best Model")
-
     # Fit the best model on the entire dataset and score the data
     if best_model_name == "Isolation Forest":
         model = iforest
         scores = model.decision_function(X_preprocessed)
         labels = model.predict(X_preprocessed)
-    elif best_model_name == "DBSCAN":
-        model = DBSCAN(eps=0.5, min_samples=5)
-        labels = model.fit_predict(X_preprocessed)
-        scores = np.ones_like(labels)  # DBSCAN does not have a scoring function
-    elif best_model_name == "HDBSCAN":
-        model = HDBSCAN(min_cluster_size=5)
-        labels = model.fit_predict(X_preprocessed)
-        scores = model.outlier_scores_
-    elif best_model_name == "KMeans":
-        model = KMeans(n_clusters=2, random_state=42)
-        labels = model.predict(X_preprocessed)
-        scores = -model.transform(X_preprocessed).min(axis=1)  # Inverse distance to cluster center
-    elif best_model_name == "Local Outlier Factor":
-        model = LocalOutlierFactor(novelty=False, contamination='auto')
-        labels = model.fit_predict(X_preprocessed)
-        scores = -model.negative_outlier_factor_  # LOF uses negative outlier factor
-    elif best_model_name == "One-Class SVM":
-        model = OneClassSVM(kernel='rbf', nu=0.05)
-        model.fit(X_preprocessed)
-        labels = model.predict(X_preprocessed)
-        scores = model.decision_function(X_preprocessed)
+        # Compute permutation importance
+        def custom_score(estimator, X, y):
+            return accuracy_score(y, estimator.predict(X))
+        perm_importance = permutation_importance(model, X_preprocessed, labels, scoring=custom_score, random_state=42)
+        feature_importances = perm_importance.importances_mean
 
-    # Convert labels to -1 for outliers and 1 for normal points
-    if best_model_name in ["Isolation Forest", "One-Class SVM"]:
-        labels = np.where(labels == 1, 1, -1)
-    else:
-        labels = np.where(labels == -1, -1, 1)
+        # Add scores and labels to the original data
+        data['Score'] = scores
+        data['Anomaly_Label'] = labels
 
-    # Add scores and labels to the original data
-    data['Score'] = scores
-    data['Anomaly_Label'] = labels
+        st.subheader("Data with Scores and Anomaly Labels")
+        st.write(data[['Score', 'Anomaly_Label']])
 
-    st.subheader("Data with Scores and Anomaly Labels")
-    st.write(data[['Score', 'Anomaly_Label']])
+        st.subheader("Data with Anomaly Labels")
+        st.write(data)
 
-    st.subheader("Data with Anomaly Labels")
-    st.write(data)
+        # Count the occurrences of -1 and 1 in the Anomaly_Label column
+        count_anomalies = data['Anomaly_Label'].value_counts()
+        st.subheader("Anomaly Label Counts")
+        st.write(f"Count of -1 (Outliers): {count_anomalies.get(-1, 0)}")
+        st.write(f"Count of 1 (Normal): {count_anomalies.get(1, 0)}")
 
-    # Count the occurrences of -1 and 1 in the Anomaly_Label column
-    count_anomalies = data['Anomaly_Label'].value_counts()
-    st.subheader("Anomaly Label Counts")
-    st.write(f"Count of -1 (Outliers): {count_anomalies.get(-1, 0)}")
-    st.write(f"Count of 1 (Normal): {count_anomalies.get(1, 0)}")
+        # Display variable importance if available
+        if feature_importances is not None:
+            st.subheader("Variable Importance")
+            feature_importance_df = pd.DataFrame({
+                'Feature': data.columns,
+                'Importance': feature_importances
+            }).sort_values(by='Importance', ascending=False)
+            st.write(feature_importance_df)
 
-    # Add download button for the dataset with anomaly labels
-    st.subheader("Download Data with Anomaly Labels")
-    csv = data.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Download data as CSV",
-        data=csv,
-        file_name='anomaly_detected_data.csv',
-        mime='text/csv'
-    )
+            fig, ax = plt.subplots()
+            sns.barplot(x='Importance', y='Feature', data=feature_importance_df, ax=ax)
+            st.pyplot(fig)
 
+        # Add download button for the dataset with anomaly labels
+        st.subheader("Download Data with Anomaly Labels")
+        csv = data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name='anomaly_detected_data.csv',
+            mime='text/csv'
+        )
