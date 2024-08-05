@@ -129,6 +129,9 @@ try:
                 fig = sns.pairplot(data)
                 st.pyplot(fig)
 
+            st.subheader("Line Chart")
+            st.line_chart(data)
+
         with tab3:
             st.header("Model Accuracy")
 
