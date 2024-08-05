@@ -145,6 +145,81 @@ try:
             st.subheader(f"Best Model: {best_model_name}")
             st.write(f"Accuracy: {best_model_accuracy}")
 
+        with tab4:
+            st.header("Scoring")
+
+            # Upload CSV file
+            uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+            if uploaded_file is not None:
+                new_data = pd.read_csv(uploaded_file)
+                st.write("Uploaded Data:")
+                st.write(new_data.head())
+
+                # Handle missing values
+                new_data_imputed = pd.DataFrame(imputer.transform(new_data), columns=new_data.columns)
+                new_data_preprocessed = preprocessor.transform(new_data_imputed)
+
+                if best_model_name == "Isolation Forest":
+                    model = iforest
+                elif best_model_name == "DBSCAN":
+                    model = DBSCAN(eps=0.5, min_samples=5)
+                elif best_model_name == "HDBSCAN":
+                    model = HDBSCAN(min_cluster_size=5)
+                elif best_model_name == "KMeans":
+                    model = KMeans(n_clusters=2, random_state=42)
+                elif best_model_name == "Local Outlier Factor":
+                    model = LocalOutlierFactor(novelty=False, contamination='auto')
+                elif best_model_name == "One-Class SVM":
+                    model = OneClassSVM(kernel='rbf', nu=0.05)
+                    model.fit(X_train)
+
+                # Score the data
+                if best_model_name in ["Isolation Forest", "One-Class SVM"]:
+                    scores = model.decision_function(new_data_preprocessed)
+                    labels = model.predict(new_data_preprocessed)
+                elif best_model_name == "DBSCAN":
+                    labels = model.fit_predict(new_data_preprocessed)
+                    scores = np.zeros_like(labels)
+                elif best_model_name == "HDBSCAN":
+                    labels = model.fit_predict(new_data_preprocessed)
+                    scores = np.zeros_like(labels)
+                elif best_model_name == "KMeans":
+                    labels = model.predict(new_data_preprocessed)
+                    scores = -model.transform(new_data_preprocessed).min(axis=1)
+                elif best_model_name == "Local Outlier Factor":
+                    labels = model.fit_predict(new_data_preprocessed)
+                    scores = -model.negative_outlier_factor_
+
+                # Convert labels to -1 for outliers and 1 for normal points
+                if best_model_name in ["Isolation Forest", "One-Class SVM"]:
+                    labels = np.where(labels == 1, 1, -1)
+                else:
+                    labels = np.where(labels == -1, -1, 1)
+
+                # Add scores and labels to the original data
+                new_data['Score'] = scores
+                new_data['Anomaly_Label'] = labels
+
+                st.subheader("Scored Data with Anomaly Labels")
+                st.write(new_data)
+
+                # Count the occurrences of -1 and 1 in the Anomaly_Label column
+                count_anomalies = new_data['Anomaly_Label'].value_counts()
+                st.subheader("Anomaly Label Counts")
+                st.write(f"Count of -1 (Outliers): {count_anomalies.get(-1, 0)}")
+                st.write(f"Count of 1 (Normal): {count_anomalies.get(1, 0)}")
+
+                # Add download button for the dataset with anomaly labels
+                st.subheader("Download Data with Anomaly Labels")
+                csv = new_data.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Download data as CSV",
+                    data=csv,
+                    file_name='scored_anomaly_data.csv',
+                    mime='text/csv'
+                )
+
 except pd.errors.EmptyDataError:
     st.error("The file is empty. Please upload a valid CSV file.")
 except pd.errors.ParserError:
