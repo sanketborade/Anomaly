@@ -21,7 +21,7 @@ st.title("Anomaly Detection")
 tab2, tab3, tab4 = st.tabs(["Exploratory Data Analysis", "Modelling", "Scoring"])
 
 # Load the data
-file_path = 'data3.csv'
+file_path = 'data5.csv'
 
 try:
     data = pd.read_csv(file_path)
