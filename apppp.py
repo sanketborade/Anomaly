@@ -129,11 +129,6 @@ try:
                 fig = sns.pairplot(data)
                 st.pyplot(fig)
 
-            st.subheader("Line Charts for Numerical Features")
-            numerical_columns = data.select_dtypes(include=[np.number]).columns
-            for column in numerical_columns:
-                st.line_chart(data[column])
-
         with tab3:
             st.header("Model Accuracy")
 
