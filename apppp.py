@@ -123,12 +123,7 @@ try:
             st.write("Correlation Matrix Values:")
             st.write(correlation_matrix)
 
-            st.subheader("Pair Plot")
-            st.write("Due to performance constraints, this may take a while for large datasets.")
-            if st.button("Generate Pair Plot"):
-                fig = sns.pairplot(data)
-                st.pyplot(fig)
-
+            
         with tab3:
             st.header("Model Accuracy")
 
