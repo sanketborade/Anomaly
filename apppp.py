@@ -123,6 +123,10 @@ try:
             st.write("Correlation Matrix Values:")
             st.write(correlation_matrix)
 
+            st.subheader("Line Charts for Numerical Features")
+            numerical_columns = data.select_dtypes(include=[np.number]).columns
+            for column in numerical_columns:
+                st.line_chart(data[column])
             
         with tab3:
             st.header("Model Accuracy")
